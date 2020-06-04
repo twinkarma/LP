@@ -1,5 +1,5 @@
 find_package(Catch2 REQUIRED)
-project(tests)
+project(tests C CXX CUDA)
 
 file(GLOB test_files
     "*.cpp"
@@ -13,8 +13,9 @@ foreach(file ${test_files})
     if(NOT ${file_name} MATCHES "main")
         message(STATUS "Adding test case ${target_name} from  ${file} ")
         add_executable(${target_name} ${file} "main.cpp")
-        target_include_directories(${target_name} PUBLIC "../include")
-        target_link_libraries(${target_name} Catch2::Catch2)
+        target_include_directories(${target_name} PUBLIC "../include" "../LP")
+        target_link_libraries(${target_name} Catch2::Catch2 "LP")
+        add_dependencies(${target_name} "LP")
         include(CTest)
         include(Catch)
         catch_discover_tests(${target_name})
@@ -24,7 +25,8 @@ endforeach()
 # Create target to test all cases
 add_executable("tests_all" ${test_files})
 target_include_directories("tests_all" PUBLIC "../include")
-target_link_libraries("tests_all" Catch2::Catch2)
+target_link_libraries("tests_all" Catch2::Catch2 "LP")
+add_dependencies("tests_all" "LP")
 include(CTest)
 include(Catch)
 catch_discover_tests("tests_all")

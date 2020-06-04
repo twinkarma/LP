@@ -11,11 +11,13 @@ set(CMAKE_CUDA_FLAGS_RELEASE "${CMAKE_CUDA_FLAGS_RELEASE} -std=c++11")
 set(Headers
     Auxilary.h
     FileIO.h
+    lp.h
 )
 source_group("Headers" FILES ${Headers})
 
 set(Sources
     FileIO.cpp
+    lp.cu
     main.cu
 )
 source_group("Sources" FILES ${Sources})
@@ -25,7 +27,9 @@ set(ALL_FILES  ${Headers} ${Sources})
 ################################################################################
 # Target
 ################################################################################
-add_executable(${PROJECT_NAME} ${ALL_FILES})
+# add_executable(${PROJECT_NAME} ${ALL_FILES})
+add_library(${PROJECT_NAME} STATIC ${ALL_FILES})
+set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 if(NOT ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64"))
     message(WARNING "${CMAKE_VS_PLATFORM_NAME} arch is not supported!")
