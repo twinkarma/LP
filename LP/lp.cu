@@ -31,9 +31,10 @@ int m_numMaxBatches = 0; //number of LPs
 int m_numMaxConstraints = 0; //size of each LP
 
 
-float4* constraints = NULL; // array of constraints
-glm::vec2* optimise = NULL; //variable to minimise in optimisation function
-glm::vec2* output = NULL; // array of optimal results in x & y.
+float4* m_constraints = NULL; // array of constraints
+int* m_constraintsCount = NULL; // array for counting number of constraints per batch
+glm::vec2* m_optimise = NULL; //variable to minimise in optimisation function
+glm::vec2* m_output = NULL; // array of optimal results in x & y.
 //float* outputVals = NULL; //array of optimal values, i.e. plug x & y into optimisation function
 
 ////////////////////////////////////
@@ -215,7 +216,7 @@ __device__ bool linearProgram1Fractions(const float4 lines_lineNo, const float4 
 * size: size of each batch
 * objective_function: variables to minimise.
 */
-__global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int batches, const int size, const glm::vec2* const objective_function) {
+__global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int batches, const int* lineCount, const glm::vec2* const objective_function) {
 	//thread index
 	const int index = (blockIdx.x * blockDim.x) + threadIdx.x;
 	const int tid = threadIdx.x;
@@ -244,6 +245,8 @@ __global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int
     //sync sm data
 	//__syncthreads();
 
+	// Gets the number of constraints in the batch
+	int size = lineCount[tid];
 
 	//loop through all lines in the batch and set per loop variables
 	for (int i = 0; i < size; i++, s_t[tid] = make_float2(-INT_MAX, INT_MAX)) {
@@ -456,25 +459,50 @@ void lplibInit(int numMaxConstraints, int numMaxBatches)
 
 	//------------------------------------------
 	//memory allocation
-	gpuErrchk(cudaMallocManaged(&output, sizeof(glm::vec2) * m_numMaxBatches));
-	gpuErrchk(cudaMallocManaged(&constraints, sizeof(float4) * m_numMaxBatches * m_numMaxConstraints));
-	gpuErrchk(cudaMallocManaged(&optimise, sizeof(glm::vec2) * m_numMaxBatches));
+	gpuErrchk(cudaMallocManaged(&m_output, sizeof(glm::vec2) * m_numMaxBatches));
+	gpuErrchk(cudaMallocManaged(&m_constraints, sizeof(float4) * m_numMaxBatches * m_numMaxConstraints));
+	gpuErrchk(cudaMallocManaged(&m_constraintsCount, sizeof(int) * m_numMaxBatches));
+	gpuErrchk(cudaMallocManaged(&m_optimise, sizeof(glm::vec2) * m_numMaxBatches));
 
 }
 
 float4* lplibGetConstraints()
 {
-	return constraints;
+	return m_constraints;
+}
+
+int* lplibGetConstraintsCount()
+{
+	return m_constraintsCount;
 }
 
 glm::vec2* lplibGetOptimise()
 {
-	return optimise;
+	return m_optimise;
 }
 
 glm::vec2* lplibGetOutput()
 {
-	return output;
+	return m_output;
+}
+
+
+void lplibSetBatch(unsigned int batchIndex, float4* constraintsArray,unsigned int numConstraints, glm::vec2* target)
+{
+	if(batchIndex < m_numMaxBatches && numConstraints <= m_numMaxConstraints)
+	{
+		m_constraintsCount[batchIndex] = numConstraints;
+		for(unsigned int i = 0; i < numConstraints; i++)
+		{
+			m_constraints[batchIndex*m_numMaxConstraints + i] = constraintsArray[i];
+		}
+	}
+
+	gpuErrchk( cudaPeekAtLastError() );
+
+	m_optimise[batchIndex] = *target;
+
+	gpuErrchk( cudaPeekAtLastError() );
 }
 
 void lplibSolve(int numBatches)
@@ -494,7 +522,7 @@ void lplibSolve(int numBatches)
 
 	//------------------------------------------
 	//Kernel execution
-	lpsolve <<< g, b >>>(constraints, output, m_numMaxBatches, m_numMaxConstraints, optimise);
+	lpsolve <<< g, b >>>(m_constraints, m_output, m_numMaxBatches, m_constraintsCount, m_optimise);
 	
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaDeviceSynchronize() );
@@ -503,15 +531,17 @@ void lplibSolve(int numBatches)
 
 void lplibClear()
 {
-	if(constraints != NULL && optimise != NULL && output != NULL)
+	if(m_constraints != NULL && m_constraintsCount != NULL && m_optimise != NULL && m_output != NULL)
 	{
-		gpuErrchk(cudaFree(constraints));
-		gpuErrchk(cudaFree(optimise));
-		gpuErrchk(cudaFree(output));
+		gpuErrchk(cudaFree(m_constraints));
+		gpuErrchk(cudaFree(m_constraintsCount));
+		gpuErrchk(cudaFree(m_optimise));
+		gpuErrchk(cudaFree(m_output));
 	}
-	constraints = NULL;
-	optimise = NULL;
-	output = NULL;
+	m_constraints = NULL;
+	m_constraintsCount = NULL;
+	m_optimise = NULL;
+	m_output = NULL;
 	m_numMaxBatches = 0;
 	m_numMaxConstraints = 0;
 }
