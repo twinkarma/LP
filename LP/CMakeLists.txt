@@ -11,7 +11,7 @@ set(CMAKE_CUDA_FLAGS_RELEASE "${CMAKE_CUDA_FLAGS_RELEASE} -std=c++11")
 set(Headers
     Auxilary.h
     FileIO.h
-    lp.h
+    ../include/lp.h
 )
 source_group("Headers" FILES ${Headers})
 
@@ -24,12 +24,24 @@ source_group("Sources" FILES ${Sources})
 
 set(ALL_FILES  ${Headers} ${Sources})
 
+
 ################################################################################
 # Target
 ################################################################################
-# add_executable(${PROJECT_NAME} ${ALL_FILES})
-add_library(${PROJECT_NAME} STATIC ${ALL_FILES})
-set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+# Static library
+add_library("${PROJECT_NAME}" STATIC ${ALL_FILES})
+set_target_properties("${PROJECT_NAME}" PROPERTIES 
+    POSITION_INDEPENDENT_CODE ON
+    )
+target_include_directories("${PROJECT_NAME}" PUBLIC "../include")
+
+# Executable
+add_executable("${PROJECT_NAME}_bin" ${ALL_FILES})
+set_target_properties("${PROJECT_NAME}_bin" PROPERTIES 
+    POSITION_INDEPENDENT_CODE ON
+    OUTPUT_NAME ${PROJECT_NAME})
+target_include_directories("${PROJECT_NAME}_bin" PUBLIC "../include")
 
 if(NOT ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64"))
     message(WARNING "${CMAKE_VS_PLATFORM_NAME} arch is not supported!")
@@ -38,62 +50,62 @@ endif()
 ################################################################################
 # Target name
 ################################################################################
-if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-    string(CONCAT TARGET_NAME
-          $<$<CONFIG:Debug>:${PROJECT_NAME}>
-        $<$<CONFIG:Release>:${PROJECT_NAME}>
-        $<$<NOT:$<OR:$<CONFIG:Debug>,$<CONFIG:Release>>>:${PROJECT_NAME}>
-    )
-endif()
-set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${TARGET_NAME})
+# if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+#     string(CONCAT TARGET_NAME
+#           $<$<CONFIG:Debug>:${PROJECT_NAME}>
+#         $<$<CONFIG:Release>:${PROJECT_NAME}>
+#         $<$<NOT:$<OR:$<CONFIG:Debug>,$<CONFIG:Release>>>:${PROJECT_NAME}>
+#     )
+# endif()
+# set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${TARGET_NAME})
 
 ################################################################################
 # Output directory
 ################################################################################
-if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-    string(CONCAT OUT_DIR
-          $<$<CONFIG:Debug>:${CMAKE_SOURCE_DIR}/${CMAKE_VS_PLATFORM_NAME}/$<CONFIG>/>
-        $<$<CONFIG:Release>:${CMAKE_SOURCE_DIR}/${CMAKE_VS_PLATFORM_NAME}/$<CONFIG>/>
-        $<$<NOT:$<OR:$<CONFIG:Debug>,$<CONFIG:Release>>>:${CMAKE_SOURCE_DIR}/${CMAKE_VS_PLATFORM_NAME}/$<CONFIG>>
-    )
-endif()
-set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${OUT_DIR})
+# if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+#     string(CONCAT OUT_DIR
+#           $<$<CONFIG:Debug>:${CMAKE_SOURCE_DIR}/${CMAKE_VS_PLATFORM_NAME}/$<CONFIG>/>
+#         $<$<CONFIG:Release>:${CMAKE_SOURCE_DIR}/${CMAKE_VS_PLATFORM_NAME}/$<CONFIG>/>
+#         $<$<NOT:$<OR:$<CONFIG:Debug>,$<CONFIG:Release>>>:${CMAKE_SOURCE_DIR}/${CMAKE_VS_PLATFORM_NAME}/$<CONFIG>>
+#     )
+# endif()
+# set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${OUT_DIR})
 
 ################################################################################
 # Include directories
 ################################################################################
-if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-    target_include_directories(${PROJECT_NAME} PUBLIC
-          $<$<CONFIG:Debug>:${CMAKE_SOURCE_DIR}/include>
-        $<$<CONFIG:Release>:${CMAKE_SOURCE_DIR}/include>
-    )
-endif()
+# if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+#     target_include_directories(${PROJECT_NAME} PUBLIC
+#           $<$<CONFIG:Debug>:${CMAKE_SOURCE_DIR}/include>
+#         $<$<CONFIG:Release>:${CMAKE_SOURCE_DIR}/include>
+#     )
+# endif()
 
 ################################################################################
 # Compile definitions
 ################################################################################
-if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-    target_compile_definitions(${PROJECT_NAME} PRIVATE
-          $<$<CONFIG:Debug>:WIN64;_DEBUG;_CONSOLE;_MBCS>
-        $<$<CONFIG:Release>:WIN64;NDEBUG;_CONSOLE;_MBCS>
-    )
-endif()
+# if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+#     target_compile_definitions(${PROJECT_NAME} PRIVATE
+#           $<$<CONFIG:Debug>:WIN64;_DEBUG;_CONSOLE;_MBCS>
+#         $<$<CONFIG:Release>:WIN64;NDEBUG;_CONSOLE;_MBCS>
+#     )
+# endif()
 
 ################################################################################
 # Compile and link options
 ################################################################################
-if(MSVC)
-    if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-        target_compile_options(${PROJECT_NAME} PRIVATE
-              $<$<CONFIG:Debug>:/Od;/MDd;/W3;/EHsc>
-            $<$<CONFIG:Release>:/GL;/O2;/Oi;/MD;/Gy;/W3;/EHsc>
-        )
-    endif()
-    if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-        set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS_DEBUG "/DEBUG /INCREMENTAL")
-        set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS_RELEASE "/LTCG /DEBUG")
-    endif()
-endif()
+# if(MSVC)
+#     if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+#         target_compile_options(${PROJECT_NAME} PRIVATE
+#               $<$<CONFIG:Debug>:/Od;/MDd;/W3;/EHsc>
+#             $<$<CONFIG:Release>:/GL;/O2;/Oi;/MD;/Gy;/W3;/EHsc>
+#         )
+#     endif()
+#     if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+#         set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS_DEBUG "/DEBUG /INCREMENTAL")
+#         set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS_RELEASE "/LTCG /DEBUG")
+#     endif()
+# endif()
 
 ################################################################################
 # Post build events
@@ -126,8 +138,8 @@ endif()
 ################################################################################
 # Working directory
 ################################################################################
-if(MSVC)
-    if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-        set_target_properties(${PROJECT_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
-    endif()
-endif()
+# if(MSVC)
+#     if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+#         set_target_properties(${PROJECT_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+#     endif()
+# endif()

@@ -75,11 +75,25 @@ include(CMake/GlobalSettingsInclude.cmake OPTIONAL)
 ################################################################################
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+
+################################################################################
+# Catch 2 test library
+################################################################################
+add_subdirectory(external/catch2)
+
 ################################################################################
 # Sub-projects
 ################################################################################
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/lib/${CMAKE_BUILD_TYPE}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/lib/${CMAKE_BUILD_TYPE}")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE}")
+          
+
 add_subdirectory(LP)
 add_subdirectory(tests)
+
+
 
 ################################################################################
 # Suppresse Zero_check
