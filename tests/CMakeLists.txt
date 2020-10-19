@@ -5,15 +5,24 @@ file(GLOB test_files
     "*.cpp"
 )
 
+
+################################################################################
+# Catch 2 - Add modules for automatically registering tests
+################################################################################
+list(APPEND CMAKE_MODULE_PATH "../external/catch2/contrib")
+
+
+####################################################################
 # Creating individual target per test .cpp file
+####################################################################
 foreach(file ${test_files})
     get_filename_component(file_name ${file} NAME_WE)
-    set(target_name "test_${file_name}")
+    set(target_name "${file_name}")
 
     if(NOT ${file_name} MATCHES "main")
         message(STATUS "Adding test case ${target_name} from  ${file} ")
         add_executable(${target_name} ${file} "main.cpp")
-        target_include_directories(${target_name} PUBLIC "../include" "../LP")
+        target_include_directories(${target_name} PUBLIC "../include")
         target_link_libraries(${target_name} Catch2::Catch2 "LP")
         add_dependencies(${target_name} "LP")
         include(CTest)
@@ -22,7 +31,9 @@ foreach(file ${test_files})
     endif()
 endforeach()
 
+####################################################################
 # Create target to test all cases
+####################################################################
 add_executable("tests_all" ${test_files})
 target_include_directories("tests_all" PUBLIC "../include")
 target_link_libraries("tests_all" Catch2::Catch2 "LP")

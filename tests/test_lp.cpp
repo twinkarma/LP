@@ -7,7 +7,7 @@
 #include "lp.h"
 
 
-TEST_CASE( "LP manually setting constratints", "" ) {
+TEST_CASE( "LP manual constraints", "" ) {
 
     int numConstraints = 64;
     int numBatches = 1;
@@ -47,7 +47,7 @@ TEST_CASE( "LP manually setting constratints", "" ) {
     
 }
 
-TEST_CASE( "LP set constraints using API call", "" ) {
+TEST_CASE( "LP API constraints", "" ) {
 
     int numConstraints = 64;
     int numBatches = 1;
